@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebApiDePrueba.Context;
 using WebApiDePrueba.Entities;
+using WebApiDePrueba.Models;
 
 namespace WebApiDePrueba.Controllers
 {[Route("api/[controller]")]
@@ -14,34 +16,42 @@ namespace WebApiDePrueba.Controllers
     public class AutoresController : ControllerBase
     {
         private readonly ApplicationDBContext context;
+        private readonly IMapper mapper;
 
-        public AutoresController(ApplicationDBContext context)
+        public AutoresController(ApplicationDBContext context, IMapper mapper)
         {
             this.context = context;
+            this.mapper = mapper;
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Autor>> Get()
+        public async Task<ActionResult<IEnumerable<AutorDTO>>> Get()
         {
-            return context.Autores.Include(x => x.Libros).ToList();
+            var autores = await context.Autores.Include(x => x.Libros).ToListAsync();
+            var autoresDTO = mapper.Map<List<AutorDTO>>(autores);
+            return autoresDTO;
         }
         [HttpGet("{id}", Name = "GetAutor")]
-        public ActionResult<Autor> Get(int id)
+        public async Task<ActionResult<AutorDTO>> Get(int id)
         {
-            var autor = context.Autores.FirstOrDefault(x => x.Id == id);
+            var autor = await context.Autores.FirstOrDefaultAsync(x => x.Id == id);
             if(autor == null)
             {
                 return NotFound();
+            
             }
-            return autor;
+            AutorDTO autorDTO = mapper.Map<AutorDTO>(autor);
+            return autorDTO;
         }
 
         [HttpPost]
-        public ActionResult Post([FromBody] Autor autor)
+        public async Task<ActionResult> Post([FromBody] AutorCreacionDTO autorCreacionDTO)
         {
+            var autor = mapper.Map<Autor>(autorCreacionDTO);
             context.Autores.Add(autor);
-            context.SaveChanges();
-            return new CreatedAtRouteResult("GetAutor", new { id=autor.Id }, autor);
+            await context.SaveChangesAsync();
+            var autorDTO = mapper.Map<AutorDTO>(autor);
+            return new CreatedAtRouteResult("GetAutor", new { id=autor.Id }, autorDTO);
         }
 
         [HttpPut("{id}")]

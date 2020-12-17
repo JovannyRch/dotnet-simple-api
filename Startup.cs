@@ -12,6 +12,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebApiDePrueba.Context;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
+using WebApiDePrueba.Models;
+using WebApiDePrueba.Entities;
 
 namespace WebApiDePrueba
 {
@@ -27,6 +30,13 @@ namespace WebApiDePrueba
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddAutoMapper(
+                configuration =>
+                {
+                    configuration.CreateMap<Autor, AutorDTO>();
+                    configuration.CreateMap<Libro, LibroDTO>();
+                    configuration.CreateMap<AutorCreacionDTO, Autor>();
+                }, typeof(Startup));
             services.AddDbContext<ApplicationDBContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddControllers()
                 .AddNewtonsoftJson(options =>

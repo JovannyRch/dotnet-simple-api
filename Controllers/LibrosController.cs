@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebApiDePrueba.Context;
 using WebApiDePrueba.Entities;
+using WebApiDePrueba.Models;
 
 namespace WebApiDePrueba.Controllers
 {
@@ -15,32 +17,46 @@ namespace WebApiDePrueba.Controllers
     public class LibrosController : ControllerBase
     {
         private readonly ApplicationDBContext context;
+        private readonly IMapper mapper;
 
-        public LibrosController(ApplicationDBContext context)
+        public LibrosController(ApplicationDBContext context, IMapper mapper)
         {
             this.context = context;
+            this.mapper = mapper;
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Autor>> Get()
+        public async Task<ActionResult<IEnumerable<Libro>>>  Get()
         {
-            return context.Autores.Include(e => e.Libros).ToList();
+            return await context.Libros.Include(e => e.Autor).ToListAsync();
         }
 
         [HttpGet("{id}", Name = "GetLibro")]
-        public ActionResult<Autor> Get(int id)
+        public async Task<ActionResult<LibroDTO>> Get(int id)
         {
-            var autor = context.Autores.FirstOrDefault(x => x.Id == id);
-            if (autor == null)
+            var libro = await context.Libros.Include(x => x.Autor).FirstOrDefaultAsync(x => x.Id == id);
+ 
+            if (libro == null)
             {
                 return NotFound();
             }
 
-            return autor;
+            LibroDTO libroDTO = mapper.Map<LibroDTO>(libro);
+
+            return libroDTO;
+        }
+
+
+        [HttpGet("search/{searchValue}", Name = "SearchLibro")]
+        public ActionResult<IEnumerable<LibroDTO>> Get(string searchValue)
+        {
+            var libros =  context.Libros.Where(l => searchValue.Contains(l.Titulo)).ToList();
+            var librosDTO = mapper.Map<List<LibroDTO>>(libros);
+            return librosDTO;
         }
 
         [HttpDelete("{id}")]
-        public ActionResult<Autor> Delete(int id)
+        public ActionResult<LibroDTO> Delete(int id)
         {
             var autor = context.Autores.FirstOrDefault(x => x.Id == id);
             if (autor == null)
@@ -53,7 +69,7 @@ namespace WebApiDePrueba.Controllers
         }
 
         [HttpPut("{id}")]
-        public ActionResult<Autor> Put(int id, [FromBody] Libro value)
+        public ActionResult<LibroDTO> Put(int id, [FromBody] Libro value)
         {
             if (id != value.Id)
             {
@@ -67,11 +83,12 @@ namespace WebApiDePrueba.Controllers
 
 
         [HttpPost]
-        public ActionResult Post([FromBody] Libro libro)
+        public async Task<ActionResult> Post([FromBody] Libro libro)
         {
             context.Libros.Add(libro);
-            context.SaveChanges();
-            return new CreatedAtRouteResult("GetLibro", new { id = libro.Id }, libro);
+            await context.SaveChangesAsync();
+            var autorDTO = mapper.Map<LibroDTO>(libro);
+            return new CreatedAtRouteResult("GetLibro", new { id = libro.Id }, autorDTO);
         }
 
     }

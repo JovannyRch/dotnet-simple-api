@@ -4,17 +4,14 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace WebApiDePrueba.Entities
+namespace WebApiDePrueba.Models
 {
-    public class Autor
+    public class AutorDTO
     {
         public int Id { get; set; }
         [Required]
         public string Nombre { get; set; }
-        public string Identificacion { get; set; }
         public DateTime FechaNacimiento { get; set; }
-        public List<Libro> Libros { get; set; }
+        public List<LibroDTO> Libros { get; set; }
     }
 }
-
-
